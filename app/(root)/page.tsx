@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-
 import { Button } from "@/components/ui/button";
 import InterviewCard from "@/components/InterviewCard";
 
@@ -13,13 +12,20 @@ import {
 async function Home() {
   const user = await getCurrentUser();
 
+  // Fetch both user-specific and all interviews
   const [userInterviews, allInterview] = await Promise.all([
     getInterviewsByUserId(user?.id!),
     getLatestInterviews({ userId: user?.id! }),
   ]);
 
+  // Filter out already-taken interviews from available ones
+  const takenInterviewIds = new Set(userInterviews?.map((i) => i.id));
+  const availableInterviews = allInterview?.filter(
+    (i) => !takenInterviewIds.has(i.id)
+  );
+
   const hasPastInterviews = userInterviews?.length! > 0;
-  const hasUpcomingInterviews = allInterview?.length! > 0;
+  const hasUpcomingInterviews = availableInterviews?.length! > 0;
 
   return (
     <>
@@ -44,6 +50,7 @@ async function Home() {
         />
       </section>
 
+      {/* User's past / completed interviews */}
       <section className="flex flex-col gap-6 mt-8">
         <h2>Your Interviews</h2>
 
@@ -66,12 +73,13 @@ async function Home() {
         </div>
       </section>
 
+      {/* Available / upcoming interviews */}
       <section className="flex flex-col gap-6 mt-8">
         <h2>Take Interviews</h2>
 
         <div className="interviews-section">
           {hasUpcomingInterviews ? (
-            allInterview?.map((interview) => (
+            availableInterviews?.map((interview) => (
               <InterviewCard
                 key={interview.id}
                 userId={user?.id}
