@@ -1,4 +1,3 @@
-// /app/api/start-interview/route.ts
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -6,9 +5,8 @@ export async function GET(req: Request) {
   const company = searchParams.get("company");
 
   if (!company) {
-    return NextResponse.json(
-      { error: "Company name is required" },
-      { status: 400 }
+    return addCORSHeaders(
+      NextResponse.json({ error: "Company name is required" }, { status: 400 })
     );
   }
 
@@ -16,24 +14,41 @@ export async function GET(req: Request) {
     const res = await fetch(
       `https://capstone-b73y.vercel.app/api/get-interview?company=${company}`
     );
-
     const data = await res.json();
 
-    // Extract the variables
     const { id, role, company: comp, questions } = data;
 
-    // Send to Vapi or handle locally
-    return NextResponse.json({
-      success: true,
-      id,
-      role,
-      company: comp,
-      questions,
-    });
+    return addCORSHeaders(
+      NextResponse.json({
+        success: true,
+        id,
+        role,
+        company: comp,
+        questions,
+      })
+    );
   } catch (err) {
-    return NextResponse.json(
-      { error: "Failed to fetch interview data" },
-      { status: 500 }
+    return addCORSHeaders(
+      NextResponse.json(
+        { error: "Failed to fetch interview data" },
+        { status: 500 }
+      )
     );
   }
+}
+
+// ✅ Add this helper to handle CORS
+function addCORSHeaders(response: NextResponse) {
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+  return response;
+}
+
+// ✅ Handle preflight OPTIONS request
+export async function OPTIONS() {
+  return addCORSHeaders(NextResponse.json({}, { status: 200 }));
 }
