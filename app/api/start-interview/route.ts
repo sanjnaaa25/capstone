@@ -1,54 +1,82 @@
 import { NextResponse } from "next/server";
+import { getFirestore } from "firebase-admin/firestore";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+// ✅ Initialize Firebase Admin
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+};
+
+if (!getApps().length) {
+  initializeApp({ credential: cert(serviceAccount) });
+}
+
+const db = getFirestore();
+
+// ✅ Common CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+// ✅ Handle OPTIONS preflight request
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
+
+// ✅ Actual GET route
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
   const company = searchParams.get("company");
 
   if (!company) {
-    return addCORSHeaders(
-      NextResponse.json({ error: "Company name is required" }, { status: 400 })
-    );
+    return new Response(JSON.stringify({ error: "Missing company name" }), {
+      status: 400,
+      headers: corsHeaders,
+    });
   }
 
   try {
-    const res = await fetch(
-      `https://capstone-b73y.vercel.app/api/get-interview?company=${company}`
-    );
-    const data = await res.json();
+    const snapshot = await db
+      .collection("recruiter_interviews")
+      .where("company", "==", company)
+      .get();
 
-    const { id, role, company: comp, questions } = data;
+    if (snapshot.empty) {
+      return new Response(
+        JSON.stringify({ error: "No interview found for this company" }),
+        { status: 404, headers: corsHeaders }
+      );
+    }
 
-    return addCORSHeaders(
-      NextResponse.json({
-        success: true,
-        id,
-        role,
-        company: comp,
-        questions,
-      })
-    );
-  } catch (err) {
-    return addCORSHeaders(
-      NextResponse.json(
-        { error: "Failed to fetch interview data" },
-        { status: 500 }
-      )
-    );
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+
+    // ✅ Return exactly the fields Vapi expects (no wrapper like "success")
+    const responseData = {
+      id: doc.id,
+      company: data.company || company,
+      role: data.role || "Not specified",
+      questions: Array.isArray(data.questions)
+        ? data.questions
+        : ["No questions found"],
+    };
+
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
+      headers: corsHeaders,
+    });
+  } catch (error) {
+    console.error("Error fetching interview:", error);
+    return new Response(JSON.stringify({ error: "Server error" }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
-}
-
-// ✅ Add this helper to handle CORS
-function addCORSHeaders(response: NextResponse) {
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  response.headers.set(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-  return response;
-}
-
-// ✅ Handle preflight OPTIONS request
-export async function OPTIONS() {
-  return addCORSHeaders(NextResponse.json({}, { status: 200 }));
 }
