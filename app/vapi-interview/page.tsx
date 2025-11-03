@@ -53,9 +53,7 @@ export default function VoiceInterviewPage() {
 
       {/* Agent Card */}
       <div className="w-full max-w-6xl bg-[#18181B] border border-gray-800 rounded-2xl shadow-xl p-10 flex flex-col items-center justify-center gap-8">
-        <Agent />
-
-        {/* ✅ Control Buttons */}
+        {/* ✅ Control Buttons moved ABOVE Agent */}
         {!isInterviewActive ? (
           <Button
             onClick={handleStart}
@@ -71,6 +69,9 @@ export default function VoiceInterviewPage() {
             ⏹ End Interview
           </Button>
         )}
+
+        {/* Agent stays below button */}
+        <Agent />
       </div>
     </section>
   );
