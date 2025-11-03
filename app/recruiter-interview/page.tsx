@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { nanoid } from "nanoid";
+import { Button } from "@/components/ui/button";
 
-// ✅ Initialize Firebase only once
 if (!getApps().length) {
   initializeApp({
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -30,6 +30,7 @@ export default function RecruiterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("Saving interview...");
+
     const questions = questionsText
       .split("\n")
       .map((q) => q.trim())
@@ -58,55 +59,69 @@ export default function RecruiterForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center p-8">
-      <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-2xl">
-        <h1 className="text-2xl font-bold mb-4">
-          Recruiter — Create Interview
+    <div className="min-h-screen bg-[#0E0E10] text-white flex justify-center items-start py-12">
+      <div className="bg-[#1A1A1D] border border-gray-800 rounded-2xl p-8 w-full max-w-2xl shadow-xl">
+        <h1 className="text-3xl font-bold text-white mb-6 text-center">
+          Create Company Interview
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block font-medium mb-1">Company Name</label>
+            <label className="block text-gray-300 mb-2 font-medium">
+              Company Name
+            </label>
             <input
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              placeholder="e.g. Accenture"
+              className="w-full bg-[#0E0E10] border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              placeholder="e.g. Google"
             />
           </div>
 
           <div>
-            <label className="block font-medium mb-1">Role</label>
+            <label className="block text-gray-300 mb-2 font-medium">Role</label>
             <input
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-              placeholder="e.g. Data Analyst Intern"
+              className="w-full bg-[#0E0E10] border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+              placeholder="e.g. Frontend Developer"
             />
           </div>
 
           <div>
-            <label className="block font-medium mb-1">
+            <label className="block text-gray-300 mb-2 font-medium">
               Questions (one per line)
             </label>
             <textarea
               value={questionsText}
               onChange={(e) => setQuestionsText(e.target.value)}
-              className="w-full border rounded p-3 min-h-[160px]"
+              className="w-full bg-[#0E0E10] border border-gray-700 rounded-xl px-4 py-3 min-h-[160px] focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
               placeholder={
-                "Enter each question on a new line\nExample:\nWhat is Python?\nExplain regression analysis.\n..."
+                "Enter each question on a new line\nExample:\nWhat is React?\nExplain useEffect hook.\n..."
               }
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-medium transition-all"
           >
             Save Interview
-          </button>
+          </Button>
 
-          <p className="text-sm mt-2 text-gray-700">{status}</p>
+          {status && (
+            <p
+              className={`text-sm mt-3 ${
+                status.startsWith("✅")
+                  ? "text-green-400"
+                  : status.startsWith("❌")
+                  ? "text-red-400"
+                  : "text-gray-400"
+              }`}
+            >
+              {status}
+            </p>
+          )}
         </form>
       </div>
     </div>
